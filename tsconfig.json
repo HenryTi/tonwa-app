@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "ESNext"
+        ],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "declaration": true,
+        "composite": true,
+        "outDir": "./dist",
+        "rootDir": "tonwa-app",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "preserveSymlinks": true,
+        "sourceMap": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": false,
+        "noImplicitThis": true,
+        "noImplicitAny": false,
+        "suppressImplicitAnyIndexErrors": true,
+        "noUnusedLocals": false,
+        "jsx": "react-jsx",
+        "strictNullChecks": false,
+        "experimentalDecorators": true,
+        "baseUrl": "tonwa-app/",
+        "typeRoots": [
+            "node_modules/@types",
+        ]
+    },
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

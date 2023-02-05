@@ -1,0 +1,38 @@
+{
+    "name": "tonwa-app",
+    "version": "1.0.0",
+    "description": "tonwa uq app components",
+    "private": false,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "/dist",
+        "tonwa-app"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/henryti/tonwa-app"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc"
+    },
+    "author": "Henry",
+    "license": "ISC",
+    "dependencies": {
+        "@types/node": "^8.10.62",
+        "@types/node-fetch": "^2.1.2",
+        "@types/react": "^18.0.5",
+        "@types/react-dom": "^18.0.1",
+        "bootstrap": "^5.2.0",
+        "font-awesome": "^4.7.0",
+        "jotai": "^2.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-query": "^3.39.3",
+        "react-router-dom": "^6.3.0",
+        "tonwa-com": "^1.0.1",
+        "tonwa-uq": "^1.0.2",
+        "typescript": "^4.0.0"
+    }
+}

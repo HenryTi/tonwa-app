@@ -1,0 +1,1 @@
+{"version":3,"file":"StorePageBase.js","sourceRoot":"","sources":["../tonwa-app/StorePageBase.ts"],"names":[],"mappings":"AAEA,MAAM,OAAgB,aAAa;IACtB,KAAK,CAAQ;IACH,GAAG,CAAM;IAC5B,YAAY,KAAY;QACpB,IAAI,CAAC,KAAK,GAAG,KAAK,CAAC;QACnB,IAAI,CAAC,GAAG,GAAG,KAAK,CAAC,GAAG,CAAC;IACzB,CAAC;IAED,KAAK,CAAC,IAAI;IACV,CAAC;CACJ"}
