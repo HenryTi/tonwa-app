@@ -1,12 +1,12 @@
-import { PageProps, Scroller } from "./PageProps";
-import 'font-awesome/css/font-awesome.min.css';
-import '../css/tonwa.css';
 import { Suspense, useEffect, useRef } from "react";
-import { ButtonPageBack } from "./ButtonPageBack";
-import { useUqAppBase } from "../../UqAppBase";
-import { PageSpinner } from "./PageSpinner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAtomValue } from "jotai/react";
+import 'font-awesome/css/font-awesome.min.css';
+import '../../css/tonwa-page.css';
+import { useUqAppBase } from "../../UqAppBase";
+import { PageProps, Scroller } from "./PageProps";
+import { ButtonPageBack } from "./ButtonPageBack";
+import { PageSpinner } from "./PageSpinner";
 
 const scrollTimeGap = 100;
 const scrollEdgeGap = 30;

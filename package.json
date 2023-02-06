@@ -1,6 +1,6 @@
 {
     "name": "tonwa-app",
-    "version": "1.0.0",
+    "version": "1.0.5",
     "description": "tonwa uq app components",
     "private": false,
     "main": "dist/index.js",
