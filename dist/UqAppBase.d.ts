@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
-import { UqConfig, User, UserApi } from 'tonwa-uq';
-import { Net, UqUnit, UserUnit, UQsMan } from "tonwa-uq";
+import { UqConfig, User, UserApi, Net, UqUnit, UserUnit, UQsMan } from 'tonwa-uq';
 export interface AppConfig {
     center: string;
     version: string;
@@ -40,8 +39,8 @@ export declare abstract class UqAppBase<U = any> {
         init: User;
     };
     readonly modal: {
-        stack: import("jotai").PrimitiveAtom<[JSX.Element, (value: any | PromiseLike<any>) => void][]> & {
-            init: [JSX.Element, (value: any | PromiseLike<any>) => void][];
+        stack: import("jotai").PrimitiveAtom<[JSX.Element, (value: any | PromiseLike<any>) => void, (result: any) => void][]> & {
+            init: [JSX.Element, (value: any | PromiseLike<any>) => void, (result: any) => void][];
         };
     };
     uqsMan: UQsMan;
@@ -62,6 +61,7 @@ export declare abstract class UqAppBase<U = any> {
     get userUnit(): UserUnit<any>;
     hasRole(role: string[] | string): boolean;
     logined(user: User): Promise<void>;
+    restart(): void;
     setUserProp(propName: string, value: any): Promise<void>;
     saveLocalData(): void;
     initErrors: string[];
@@ -70,7 +70,7 @@ export declare abstract class UqAppBase<U = any> {
     protected loadOnLogined(): Promise<void>;
 }
 export declare function useModal(): {
-    openModal: <T = any>(element: JSX.Element, caption?: string | JSX.Element) => Promise<T>;
+    openModal: <T = any>(element: JSX.Element, caption?: string | JSX.Element, onClosed?: (result: any) => void) => Promise<T>;
     closeModal: (result?: any) => void;
 };
 export declare const UqAppContext: React.Context<any>;

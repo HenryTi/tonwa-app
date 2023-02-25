@@ -1,38 +1,25 @@
-import { Outlet, Route, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Band } from "tonwa-com";
 import { BandPassword } from "tonwa-com";
 import { Form, Submit, FormErrors } from "tonwa-com";
 import { PagePublic } from "../coms";
-import { useUqAppBase } from "../UqAppBase";
+import { useModal, useUqAppBase } from "../UqAppBase";
 import { AuthFormBandTemplate } from "./AuthFormBandTemplate";
 
-const pathChangeSucceed = '/changeSucceed';
-
 export function PageChangePassword() {
-    return <>
-        <Outlet />
-        <Route element={<PageChangePassword />}>
-            <Route index element={<PageChangePasswordIndex />} />
-            <Route path={pathChangeSucceed} element={<PageChangeSucceed />} />
-        </Route>
-    </>;
-}
-
-function PageChangePasswordIndex() {
     const navigate = useNavigate();
+    const { openModal } = useModal();
     let uqApp = useUqAppBase()
     let onSubmit = async (data: any): Promise<any> => {
         let { orgPassword, newPassword, newPassword1 } = data;
         if (newPassword !== newPassword1) {
             return ['newPassword1', '新密码错误，请重新输入'];
         }
-        //let centerAppApi = new CenterAppApi('tv/', undefined);
-        //let ret = await centerAppApi.changePassword({orgPassword, newPassword});
         let ret = await uqApp.userApi.changePassword({ orgPassword, newPassword })
         if (ret === false) {
             return ['orgPassword', '原密码错误'];
         }
-        navigate(pathChangeSucceed, { replace: true });
+        openModal(<ChangeSucceed />, '修改密码', () => navigate(-1));
     }
 
     return <PagePublic header="修改密码">
@@ -50,10 +37,8 @@ function PageChangePasswordIndex() {
     </PagePublic>;
 }
 
-function PageChangeSucceed() {
-    return <PagePublic header="修改密码" back="close">
-        <div className="m-3  text-success">
-            密码修改成功！
-        </div>
-    </PagePublic>;
+function ChangeSucceed() {
+    return <div className="m-3  text-success">
+        密码修改成功！
+    </div>;
 }

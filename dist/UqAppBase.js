@@ -3,10 +3,8 @@ import React, { useContext, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { atom, useAtom } from 'jotai';
 import jwtDecode from 'jwt-decode';
-import { getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
-import { LocalDb } from 'tonwa-uq';
-import { createUQsMan, Net } from "tonwa-uq";
-import { Spinner } from 'tonwa-com';
+import { Spinner, getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
+import { LocalDb, createUQsMan, Net } from 'tonwa-uq';
 import { PagePublic } from './coms';
 import { uqsProxy } from './uq';
 import { AutoRefresh } from './AutoRefresh';
@@ -84,16 +82,21 @@ export class UqAppBase {
         if (user) {
             jwtDecode(user.token);
             this.net.setCenterToken(user.id, user.token);
+            this.localData.user.set(user);
+            await this.loadOnLogined();
         }
         else {
             this.net.clearCenterToken();
             this.uqUnit = undefined;
+            this.localData.user.remove();
+            setAtomValue(this.user, undefined);
+            document.cookie = '';
+            localStorage.clear();
             autoRefresh.stop();
         }
-        this.localData.user.set(user);
-        if (user) {
-            await this.loadOnLogined();
-        }
+    }
+    restart() {
+        document.location.assign('/');
     }
     async setUserProp(propName, value) {
         await this.userApi.userSetProp(propName, value);
@@ -167,7 +170,7 @@ export function useModal() {
     const { modal } = useUqAppBase();
     const { stack: modalStackAtom } = modal;
     const [modalStack, setModalStack] = useAtom(modalStackAtom);
-    async function openModal(element, caption) {
+    async function openModal(element, caption, onClosed) {
         return new Promise((resolve, reject) => {
             if (React.isValidElement(element) !== true) {
                 alert('is not valid element');
@@ -177,16 +180,16 @@ export function useModal() {
                 const { closeModal } = useModal();
                 return _jsx(PagePublic, { header: caption, onBack: () => closeModal(undefined), back: 'close', children: element }, void 0);
             }
-            //state.modalStack.push(ref([<Modal />, resolve]));
-            setModalStack([...modalStack, [_jsx(Modal, {}, void 0), resolve]]);
+            setModalStack([...modalStack, [_jsx(Modal, {}, void 0), resolve, onClosed]]);
         });
     }
     function closeModal(result) {
-        let [, resolve] = modalStack.pop();
+        let [, resolve, onClosed] = modalStack.pop();
         setModalStack([...modalStack]);
         resolve(result);
+        onClosed?.(result);
     }
-    return { openModal, closeModal, };
+    return { openModal, closeModal };
 }
 export const UqAppContext = React.createContext(undefined);
 export function useUqAppBase() {

@@ -73,7 +73,7 @@ export function Login({ url, withBack, loginTop, privacy, callback }: Props) {
         return <PagePublic header={header} footer={privacy}>
             <div className="d-flex p-5 flex-column justify-content-center align-items-center">
                 <div className="flex-fill" />
-                <div className="w-20c">
+                <div className="w-30c">
                     {loginTop ?? <div className="text-center p-3 fs-5 text-primary">登录</div>}
                     <div className="h-2c" />
                     <Form BandTemplate={AuthFormBandTemplate}>
@@ -86,13 +86,15 @@ export function Login({ url, withBack, loginTop, privacy, callback }: Props) {
                         <Band>
                             <FormErrors />
                         </Band>
-                        <Band contentContainerClassName="text-center my-3">
+                        <Band contentContainerClassName="my-3">
                             <Submit onSubmit={onSubmit}><div className='mx-5'>登录</div></Submit>
                         </Band>
                     </Form>
-                    <div className="text-center">
-                        <Link className="btn btn-link" to={pathForget}>忘记密码</Link>
-                        <Link className="btn btn-link" to={pathRegister}>注册账号</Link>
+                    <div className="row">
+                        <div className="offset-sm-3">
+                            <Link className="btn btn-link" to={pathForget}>忘记密码</Link>
+                            <Link className="btn btn-link" to={pathRegister}>注册账号</Link>
+                        </div>
                     </div>
                 </div>
                 <div className="flex-fill" />

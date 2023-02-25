@@ -2,15 +2,16 @@ import React, { ReactNode, useContext, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { atom, useAtom } from 'jotai';
 import jwtDecode from 'jwt-decode';
-import { getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
-import { Guest, LocalDb, NetProps, UqConfig, User, UserApi } from 'tonwa-uq';
-import { createUQsMan, Net, UqUnit, Uq, UserUnit, UQsMan } from "tonwa-uq";
-import { env } from 'tonwa-com';
-import { Spinner } from 'tonwa-com';
+import { Spinner, getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
+import {
+    Guest, LocalDb, NetProps, UqConfig, User, UserApi
+    , createUQsMan, Net, UqUnit, UserUnit, UQsMan
+} from 'tonwa-uq';
 import { PagePublic } from './coms';
 import { uqsProxy } from './uq';
 import { AutoRefresh } from './AutoRefresh';
 import { LocalData } from './tools';
+import { useNavigate } from 'react-router-dom';
 
 export interface AppConfig { //extends UqsConfig {
     center: string;
@@ -55,7 +56,7 @@ export abstract class UqAppBase<U = any> {
     readonly refreshTime = atom(Date.now() / 1000);
     readonly user = atom(undefined as User);
     readonly modal = {
-        stack: atom([] as [JSX.Element, (value: any | PromiseLike<any>) => void][]),
+        stack: atom([] as [JSX.Element, (value: any | PromiseLike<any>) => void, (result: any) => void][]),
     }
     uqsMan: UQsMan;
     store: any;
@@ -114,16 +115,22 @@ export abstract class UqAppBase<U = any> {
         if (user) {
             jwtDecode(user.token);
             this.net.setCenterToken(user.id, user.token);
+            this.localData.user.set(user);
+            await this.loadOnLogined();
         }
         else {
             this.net.clearCenterToken();
             this.uqUnit = undefined;
+            this.localData.user.remove();
+            setAtomValue(this.user, undefined);
+            document.cookie = '';
+            localStorage.clear();
             autoRefresh.stop();
         }
-        this.localData.user.set(user);
-        if (user) {
-            await this.loadOnLogined();
-        }
+    }
+
+    restart() {
+        document.location.assign('/');
     }
 
     async setUserProp(propName: string, value: any) {
@@ -224,7 +231,7 @@ export function useModal() {
     const { modal } = useUqAppBase();
     const { stack: modalStackAtom } = modal;
     const [modalStack, setModalStack] = useAtom(modalStackAtom);
-    async function openModal<T = any>(element: JSX.Element, caption?: string | JSX.Element): Promise<T> {
+    async function openModal<T = any>(element: JSX.Element, caption?: string | JSX.Element, onClosed?: (result: any) => void): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             if (React.isValidElement(element) !== true) {
                 alert('is not valid element');
@@ -236,16 +243,16 @@ export function useModal() {
                     onBack={() => closeModal(undefined)}
                     back={'close'}>{element}</PagePublic>;
             }
-            //state.modalStack.push(ref([<Modal />, resolve]));
-            setModalStack([...modalStack, [<Modal />, resolve]]);
+            setModalStack([...modalStack, [<Modal />, resolve, onClosed]]);
         })
     }
     function closeModal(result?: any) {
-        let [, resolve] = modalStack.pop();
+        let [, resolve, onClosed] = modalStack.pop();
         setModalStack([...modalStack]);
         resolve(result);
+        onClosed?.(result);
     }
-    return { openModal, closeModal, }
+    return { openModal, closeModal }
 }
 
 export const UqAppContext = React.createContext(undefined);
