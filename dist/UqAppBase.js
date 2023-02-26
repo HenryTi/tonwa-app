@@ -5,19 +5,18 @@ import { atom, useAtom } from 'jotai';
 import jwtDecode from 'jwt-decode';
 import { Spinner, getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
 import { LocalDb, createUQsMan, Net } from 'tonwa-uq';
-import { PagePublic } from './coms';
+import { PageBase } from './coms';
 import { uqsProxy } from './uq';
 import { AutoRefresh } from './AutoRefresh';
 import { LocalData } from './tools';
-let uqAppId = 1;
 export class UqAppBase {
     appConfig;
     uqConfigs;
     uqsSchema;
+    map = new Map();
     //private readonly stores: Store[];          // 用于在同一个模块中传递
     localData;
     roleNames;
-    uqAppBaseId;
     net;
     userApi;
     version; // version in appConfig;
@@ -36,7 +35,7 @@ export class UqAppBase {
     uqs;
     uqUnit;
     constructor(appConfig, uqConfigs, uqsSchema, appEnv) {
-        this.uqAppBaseId = uqAppId++;
+        window.history.scrollRestoration = 'manual';
         this.appConfig = appConfig;
         this.uqConfigs = uqConfigs;
         this.uqsSchema = uqsSchema;
@@ -98,6 +97,36 @@ export class UqAppBase {
     restart() {
         document.location.assign('/');
     }
+    createUrlCache(url) {
+        let uc = this.map.get(url);
+        if (!uc) {
+            this.map.set(url, { scrollTop: undefined, data: undefined });
+        }
+    }
+    setUrlCacheScrollTop(url, scrollTop) {
+        let uc = this.map.get(url);
+        if (uc) {
+            uc.scrollTop = scrollTop;
+            return;
+        }
+        this.map.set(url, { scrollTop, data: undefined });
+    }
+    setUrlCacheData(url, data) {
+        let uc = this.map.get(url);
+        if (uc) {
+            uc.data = data;
+            return;
+        }
+        this.map.set(url, { scrollTop: undefined, data });
+    }
+    getUrlCache(url) {
+        return this.map.get(url);
+    }
+    /*
+    deleteUrlCache(url: string) {
+        this.map.delete(url);
+    }
+    */
     async setUserProp(propName, value) {
         await this.userApi.userSetProp(propName, value);
         let user = getAtomValue(this.user);
@@ -178,7 +207,7 @@ export function useModal() {
             }
             function Modal() {
                 const { closeModal } = useModal();
-                return _jsx(PagePublic, { header: caption, onBack: () => closeModal(undefined), back: 'close', children: element }, void 0);
+                return _jsx(PageBase, { header: caption, onBack: () => closeModal(undefined), back: 'close', children: element }, void 0);
             }
             setModalStack([...modalStack, [_jsx(Modal, {}, void 0), resolve, onClosed]]);
         });
@@ -190,6 +219,11 @@ export function useModal() {
         onClosed?.(result);
     }
     return { openModal, closeModal };
+}
+export function useScrollRestoration() {
+    const uqApp = useUqAppBase();
+    const { pathname } = document.location;
+    uqApp.createUrlCache(pathname);
 }
 export const UqAppContext = React.createContext(undefined);
 export function useUqAppBase() {

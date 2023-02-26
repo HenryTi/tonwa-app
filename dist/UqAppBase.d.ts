@@ -21,13 +21,17 @@ export interface RoleName {
     icon?: string;
     color?: string;
 }
+interface UrlCache {
+    scrollTop: number;
+    data: any;
+}
 export declare abstract class UqAppBase<U = any> {
     private readonly appConfig;
     private readonly uqConfigs;
     private readonly uqsSchema;
+    private map;
     private localData;
     private roleNames;
-    readonly uqAppBaseId: number;
     readonly net: Net;
     readonly userApi: UserApi;
     readonly version: string;
@@ -62,6 +66,10 @@ export declare abstract class UqAppBase<U = any> {
     hasRole(role: string[] | string): boolean;
     logined(user: User): Promise<void>;
     restart(): void;
+    createUrlCache(url: string): void;
+    setUrlCacheScrollTop(url: string, scrollTop: number): void;
+    setUrlCacheData(url: string, data: any): void;
+    getUrlCache(url: string): UrlCache;
     setUserProp(propName: string, value: any): Promise<void>;
     saveLocalData(): void;
     initErrors: string[];
@@ -73,9 +81,11 @@ export declare function useModal(): {
     openModal: <T = any>(element: JSX.Element, caption?: string | JSX.Element, onClosed?: (result: any) => void) => Promise<T>;
     closeModal: (result?: any) => void;
 };
+export declare function useScrollRestoration(): void;
 export declare const UqAppContext: React.Context<any>;
 export declare function useUqAppBase(): UqAppBase<any>;
 export declare function ViewUqAppBase({ uqApp, children }: {
     uqApp: UqAppBase;
     children: ReactNode;
 }): JSX.Element;
+export {};
