@@ -60,7 +60,7 @@ export class ListEditContext {
 export function ListEdit(props) {
     let { context } = props;
     let items = useAtomValue(context.atomItems);
-    return _jsx(List, { ...props, items: items }, void 0);
+    return _jsx(List, { ...props, items: items });
 }
 export function useListEdit(items, keyCompare) {
     let { current } = useRef(new ListEditContext(items, keyCompare));

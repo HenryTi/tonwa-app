@@ -1,4 +1,4 @@
-export declare type AccountType = 'email' | 'mobile';
+export type AccountType = 'email' | 'mobile';
 export interface PasswordParams {
     account: string;
     password: string;

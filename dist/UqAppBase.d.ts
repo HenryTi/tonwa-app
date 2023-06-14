@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { UqConfig, User, UserApi, Net, UqUnit, UserUnit, UQsMan } from 'tonwa-uq';
+import { PageCache } from './PageCache';
 export interface AppConfig {
     center: string;
     version: string;
@@ -21,15 +22,10 @@ export interface RoleName {
     icon?: string;
     color?: string;
 }
-interface UrlCache {
-    scrollTop: number;
-    data: any;
-}
-export declare abstract class UqAppBase<U = any> {
+export declare abstract class UqAppBase<UQS = any> {
     private readonly appConfig;
     private readonly uqConfigs;
     private readonly uqsSchema;
-    private map;
     private localData;
     private roleNames;
     readonly net: Net;
@@ -47,10 +43,10 @@ export declare abstract class UqAppBase<U = any> {
             init: [JSX.Element, (value: any | PromiseLike<any>) => void, (result: any) => void][];
         };
     };
+    readonly pageCache: PageCache;
     uqsMan: UQsMan;
-    store: any;
     guest: number;
-    uqs: U;
+    uqs: UQS;
     uqUnit: UqUnit;
     constructor(appConfig: AppConfig, uqConfigs: UqConfig[], uqsSchema: {
         [uq: string]: any;
@@ -62,30 +58,35 @@ export declare abstract class UqAppBase<U = any> {
     loginUnit(userUnit: UserUnit): void;
     logoutUnit(): void;
     closeAllModal(): void;
+    onCloseModal: () => void;
     get userUnit(): UserUnit<any>;
     hasRole(role: string[] | string): boolean;
     logined(user: User): Promise<void>;
     restart(): void;
-    createUrlCache(url: string): void;
-    setUrlCacheScrollTop(url: string, scrollTop: number): void;
-    setUrlCacheData(url: string, data: any): void;
-    getUrlCache(url: string): UrlCache;
     setUserProp(propName: string, value: any): Promise<void>;
     saveLocalData(): void;
+    protected onLoadUQs(): void;
     initErrors: string[];
     init(): Promise<void>;
     protected loadWithoutLogin(): Promise<void>;
     protected loadOnLogined(): Promise<void>;
+    private readonly objects;
+    objectOf<T, A extends UqAppBase>(constructor: new (uqApp: A) => T): T;
+    protected onObjectBuilt(object: any): void;
 }
+export type OpenModal = <T = any>(element: JSX.Element, onClosed?: (result: any) => void) => Promise<T>;
+export declare const ModalContext: React.Context<any>;
 export declare function useModal(): {
-    openModal: <T = any>(element: JSX.Element, caption?: string | JSX.Element, onClosed?: (result: any) => void) => Promise<T>;
+    openModal: OpenModal;
     closeModal: (result?: any) => void;
 };
-export declare function useScrollRestoration(): void;
+export declare function uqAppModal(uqApp: UqAppBase): {
+    openModal: OpenModal;
+    closeModal: (result?: any) => void;
+};
 export declare const UqAppContext: React.Context<any>;
 export declare function useUqAppBase(): UqAppBase<any>;
-export declare function ViewUqAppBase({ uqApp, children }: {
+export declare function ViewUqApp({ uqApp, children }: {
     uqApp: UqAppBase;
     children: ReactNode;
 }): JSX.Element;
-export {};

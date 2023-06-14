@@ -22,7 +22,6 @@
         "noImplicitReturns": false,
         "noImplicitThis": true,
         "noImplicitAny": false,
-        "suppressImplicitAnyIndexErrors": true,
         "noUnusedLocals": false,
         "jsx": "react-jsx",
         "strictNullChecks": false,

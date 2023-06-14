@@ -7,11 +7,10 @@ import {
     Guest, LocalDb, NetProps, UqConfig, User, UserApi
     , createUQsMan, Net, UqUnit, UserUnit, UQsMan
 } from 'tonwa-uq';
-import { PageBase, PagePublic } from './coms';
 import { uqsProxy } from './uq';
 import { AutoRefresh } from './AutoRefresh';
 import { LocalData } from './tools';
-import { useNavigate } from 'react-router-dom';
+import { PageCache } from './PageCache';
 
 export interface AppConfig { //extends UqsConfig {
     center: string;
@@ -37,36 +36,26 @@ export interface RoleName {
     color?: string;
 }
 
-interface UrlCache {
-    scrollTop: number;
-    data: any;
-}
-
-export abstract class UqAppBase<U = any> {
+export abstract class UqAppBase<UQS = any> {
     private readonly appConfig: AppConfig;
     private readonly uqConfigs: UqConfig[];
     private readonly uqsSchema: { [uq: string]: any; };
-    private map: Map<string, UrlCache> = new Map();
-    //private readonly stores: Store[];          // 用于在同一个模块中传递
     private localData: LocalData;
     private roleNames: { [key: string]: RoleName };
     readonly net: Net;
     readonly userApi: UserApi;
     readonly version: string;    // version in appConfig;
     readonly mustLogin: boolean;
-    //readonly responsive: {
-    //    user: User;
-    //}
     readonly refreshTime = atom(Date.now() / 1000);
     readonly user = atom(undefined as User);
     readonly modal = {
         stack: atom([] as [JSX.Element, (value: any | PromiseLike<any>) => void, (result: any) => void][]),
     }
+    readonly pageCache = new PageCache();
 
     uqsMan: UQsMan;
-    store: any;
     guest: number;
-    uqs: U;
+    uqs: UQS;
     uqUnit: UqUnit;
 
     constructor(appConfig: AppConfig, uqConfigs: UqConfig[], uqsSchema: { [uq: string]: any; }, appEnv: AppEnv) {
@@ -91,22 +80,25 @@ export abstract class UqAppBase<U = any> {
         this.userApi = this.net.userApi;
         let user = this.localData.user.get();
         setAtomValue(this.user, user);
+        this.pageCache = new PageCache();
     }
 
     abstract get pathLogin(): string;
 
     protected get defaultUqRoleNames(): { [lang: string]: any } { return undefined }
+
     loginUnit(userUnit: UserUnit) {
         this.uqUnit.loginUnit(userUnit);
     }
+
     logoutUnit() {
         this.uqUnit.logoutUnit();
     }
     closeAllModal() {
         setAtomValue(this.modal.stack, []);
     }
+    onCloseModal: () => void;
     get userUnit() { return this.uqUnit.userUnit; }
-    // get me() { return this.user.read().user.read() return this.responsive.user?.id; }
     hasRole(role: string[] | string): boolean {
         if (this.uqUnit === undefined) return false;
         return this.uqUnit.hasRole(role);
@@ -138,37 +130,6 @@ export abstract class UqAppBase<U = any> {
         document.location.assign('/');
     }
 
-    createUrlCache(url: string) {
-        let uc = this.map.get(url);
-        if (!uc) {
-            this.map.set(url, { scrollTop: undefined, data: undefined });
-        }
-    }
-    setUrlCacheScrollTop(url: string, scrollTop: number) {
-        let uc = this.map.get(url);
-        if (uc) {
-            uc.scrollTop = scrollTop;
-            return;
-        }
-        this.map.set(url, { scrollTop, data: undefined });
-    }
-    setUrlCacheData(url: string, data: any) {
-        let uc = this.map.get(url);
-        if (uc) {
-            uc.data = data;
-            return;
-        }
-        this.map.set(url, { scrollTop: undefined, data });
-    }
-    getUrlCache(url: string): UrlCache {
-        return this.map.get(url);
-    }
-    /*
-    deleteUrlCache(url: string) {
-        this.map.delete(url);
-    }
-    */
-
     async setUserProp(propName: string, value: any) {
         await this.userApi.userSetProp(propName, value);
         let user = getAtomValue(this.user);
@@ -183,6 +144,8 @@ export abstract class UqAppBase<U = any> {
         this.localData.saveToLocalStorage();
     }
 
+    protected onLoadUQs() { }
+
     initErrors: string[];
 
     async init(): Promise<void> {
@@ -193,15 +156,12 @@ export abstract class UqAppBase<U = any> {
             let uqsMan = await createUQsMan(this.net, this.appConfig.version, this.uqConfigs, this.uqsSchema);
             console.log('createUQsMan');
             this.uqsMan = uqsMan;
-            this.uqs = uqsProxy(uqsMan) as U;
+            this.uqs = uqsProxy(uqsMan) as UQS;
 
             if (this.uqs) {
-                // this.uq = this.defaultUq;
-                // this.buildRoleNames();
+                this.onLoadUQs();
             }
-            // let user = this.localData.user.get();
             let user = getAtomValue(this.user);
-            // console.log('logined');
             if (!user) {
                 let guest: Guest = this.localData.guest.get();
                 if (guest === undefined) {
@@ -249,6 +209,20 @@ export abstract class UqAppBase<U = any> {
         return this.roleNames[role];
     }
     */
+
+    private readonly objects = new Map<new (uqApp: any) => any, any>();
+    objectOf<T, A extends UqAppBase>(constructor: new (uqApp: A) => T) {
+        let ret = this.objects.get(constructor) as T;
+        if (ret === undefined) {
+            ret = new constructor(this as any);
+            this.objects.set(constructor, ret);
+            this.onObjectBuilt(ret);
+        }
+        return ret;
+    }
+
+    protected onObjectBuilt(object: any) {
+    }
 }
 
 class LocalStorageDb extends LocalDb {
@@ -263,39 +237,40 @@ class LocalStorageDb extends LocalDb {
     }
 }
 
+export type OpenModal = <T = any>(element: JSX.Element, onClosed?: (result: any) => void) => Promise<T>;
+export const ModalContext = React.createContext(undefined);
 export function useModal() {
-    const { modal } = useUqAppBase();
+    const uqApp = useUqAppBase();
+    return uqAppModal(uqApp);
+}
+
+export function uqAppModal(uqApp: UqAppBase): { openModal: OpenModal; closeModal: (result?: any) => void } {
+    const { modal } = uqApp;
     const { stack: modalStackAtom } = modal;
-    const [modalStack, setModalStack] = useAtom(modalStackAtom);
-    async function openModal<T = any>(element: JSX.Element, caption?: string | JSX.Element, onClosed?: (result: any) => void): Promise<T> {
+    async function openModal<T = any>(element: JSX.Element, onClosed?: (result: any) => void): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             if (React.isValidElement(element) !== true) {
                 alert('is not valid element');
                 return;
             }
-            function Modal() {
-                const { closeModal } = useModal();
-                return <PageBase header={caption}
-                    onBack={() => closeModal(undefined)}
-                    back={'close'}>{element}</PageBase>;
-            }
-            setModalStack([...modalStack, [<Modal />, resolve, onClosed]]);
+            let modal = <ModalContext.Provider value={true}>
+                {element}
+            </ModalContext.Provider>;
+            let modalStack = getAtomValue(modalStackAtom);
+            setAtomValue(modalStackAtom, [...modalStack, [modal, resolve, onClosed]]);
         })
     }
     function closeModal(result?: any) {
+        let modalStack = getAtomValue(modalStackAtom);
         let [, resolve, onClosed] = modalStack.pop();
-        setModalStack([...modalStack]);
+        setAtomValue(modalStackAtom, [...modalStack]);
         resolve(result);
         onClosed?.(result);
+        uqApp.onCloseModal?.();
     }
     return { openModal, closeModal }
 }
 
-export function useScrollRestoration() {
-    const uqApp = useUqAppBase();
-    const { pathname } = document.location;
-    uqApp.createUrlCache(pathname);
-}
 
 export const UqAppContext = React.createContext(undefined);
 export function useUqAppBase() {
@@ -310,7 +285,7 @@ const queryClient = new QueryClient({
     },
 });
 
-export function ViewUqAppBase({ uqApp, children }: { uqApp: UqAppBase; children: ReactNode; }) {
+export function ViewUqApp({ uqApp, children }: { uqApp: UqAppBase; children: ReactNode; }) {
     const [modalStack] = useAtom(uqApp.modal.stack);
     let [appInited, setAppInited] = useState<boolean>(false);
     useEffectOnce(() => {

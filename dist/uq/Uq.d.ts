@@ -7,5 +7,5 @@ export declare class Uq {
         [name: string]: import("tonwa-uq").Entity;
     };
     private $_createUqSqlProxy;
-    private errUndefinedEntity;
+    private errUnexistEntity;
 }

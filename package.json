@@ -1,6 +1,6 @@
 {
     "name": "tonwa-app",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "tonwa uq app components",
     "private": false,
     "main": "dist/index.js",
@@ -32,7 +32,7 @@
         "react-query": "^3.39.3",
         "react-router-dom": "^6.3.0",
         "tonwa-com": "^1.0.1",
-        "tonwa-uq": "^1.0.2",
+        "tonwa-uq": "^1.0.7",
         "typescript": "^4.0.0"
     }
 }

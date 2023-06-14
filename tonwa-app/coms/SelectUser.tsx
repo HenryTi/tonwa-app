@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ButtonAsync, MutedSmall, SearchBox, wait } from "tonwa-com";
 import { FA } from "tonwa-com";
 import { User } from "tonwa-uq";
-import { useUqAppBase } from "../UqAppBase";
+import { useModal, useUqAppBase } from "../UqAppBase";
 import { Image } from "./Image";
 import { Page } from "./page";
 
@@ -11,11 +11,8 @@ interface Props {
     top?: string | JSX.Element;
 }
 export function SelectUser({ header, top }: Props) {
-    return <Page>
-        select user
-    </Page>
-    /*
     let app = useUqAppBase();
+    const { closeModal } = useModal();
     let [user, setUser] = useState<User>(null);
     let onSearch = async (key: string) => {
         let retUser = await app.userApi.userFromName(key);
@@ -23,6 +20,9 @@ export function SelectUser({ header, top }: Props) {
     }
     header = header ?? 'Select user';
     let cnBorder = "border rounded-3 bg-white p-5 mx-auto w-min-20c";
+    async function onClick() {
+        closeModal(user);
+    }
     let vContent: any;
     if (user === null) {
         vContent = null;
@@ -31,17 +31,10 @@ export function SelectUser({ header, top }: Props) {
         vContent = <div className={cnBorder}><FA name="info-o" className="me-3 text-info" /> No user</div>;
     }
     else {
-        let { name, nick, icon } = user;
         vContent = <div className={cnBorder}>
-            <div className="d-flex">
-                <Image src={icon} className="me-4 w-2-5c h-2-5c" />
-                <div>
-                    <div><MutedSmall>Name:</MutedSmall> &nbsp; {name}</div>
-                    <div><MutedSmall>Nick:</MutedSmall> &nbsp; {nick}</div>
-                </div>
-            </div>
+            <ViewUser user={user} />
             <div className="text-center mt-5">
-                <ButtonAsync className="btn btn-primary" onClick={() => { nav.returnCall(user); return wait(10000); }}>
+                <ButtonAsync className="btn btn-primary" onClick={onClick}>
                     OK
                 </ButtonAsync>
             </div>
@@ -60,5 +53,15 @@ export function SelectUser({ header, top }: Props) {
             {vContent}
         </div>
     </Page>;
-*/
+}
+
+export function ViewUser({ user }: { user: User; }) {
+    let { name, nick, icon } = user;
+    return <div className="d-flex">
+        <Image src={icon} className="me-4 w-2-5c h-2-5c" />
+        <div>
+            <div><MutedSmall>Name:</MutedSmall> &nbsp; {name}</div>
+            <div><MutedSmall>Nick:</MutedSmall> &nbsp; {nick}</div>
+        </div>
+    </div>;
 }

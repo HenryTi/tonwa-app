@@ -1,9 +1,9 @@
-import { Suspense, useEffect, useRef } from "react";
-import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { Suspense, useContext, useEffect, useRef } from "react";
+import { NavigationType, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useAtomValue } from "jotai/react";
 import 'font-awesome/css/font-awesome.min.css';
 import '../../css/tonwa-page.css';
-import { useUqAppBase } from "../../UqAppBase";
+import { ModalContext, useModal, useUqAppBase } from "../../UqAppBase";
 import { PageProps, Scroller } from "./PageProps";
 import { ButtonPageBack } from "./ButtonPageBack";
 import { PageSpinner } from "./PageSpinner";
@@ -12,67 +12,62 @@ import { useEffectOnce } from "tonwa-com";
 const scrollTimeGap = 100;
 const scrollEdgeGap = 30;
 
-// unanthorized page
-export function PageBase(props: PageProps) {
+function PageBase(props: PageProps) {
+    const uqApp = useUqAppBase();
     let { children, header, back, right, footer, onClosed } = props;
     const divRef = useRef<HTMLDivElement>();
-    const uqApp = useUqAppBase();
     const { pathname } = document.location;
-    useEffect(() => {
-        function setScroll() {
-            let { current: div } = divRef;
-            if (!div) return;
-            let elScroll = getScrollableParent(div);
-            if (!elScroll) return;
-            elScroll.onscroll = onScroll;
-            window.onscroll = onScroll;
+    useEffectOnce(() => {
+        let { current: div } = divRef;
+        if (!div) return;
+        let elScroll = getScrollableParent(div);
+        if (!elScroll) return;
+        //elScroll.addEventListener("scroll", onScroll);
+        window.onscroll = onScroll;
 
-            let bottomTimeSave = 0;
-            let topTimeSave = 0;
-            let scrollTopSave = elScroll.scrollTop;
-            function onScroll(e: any) {
-                let { onScroll, onScrollTop, onScrollBottom } = props;
-                if (onScroll) onScroll(e);
-                let el = (e.target as Document).scrollingElement as HTMLBaseElement;
-                const { scrollTop, offsetHeight, scrollHeight } = el;
-                if (scrollTop > scrollTopSave) {
-                    scrollTopSave = scrollTop;
-                }
-                const urlCache = uqApp.getUrlCache(pathname);
-                if (urlCache !== undefined && scrollTop > 0) {
-                    Object.assign(urlCache, { scrollTop });
-                }
-                let scroller = new Scroller(el);
-                if (scrollTop < scrollEdgeGap) {
-                    if (onScrollTop !== undefined) {
-                        let topTime = new Date().getTime();
-                        if (topTime - topTimeSave > scrollTimeGap) {
-                            topTimeSave = topTime;
-                            onScrollTop(scroller).then(ret => {
-                                // has more
-                                if (ret === true) {
-                                    let sh = scrollHeight;
-                                    let top = 200;
-                                    if (top > sh) top = sh;
-                                    el.scrollTop = top;
-                                }
-                            });
+        let bottomTimeSave = 0;
+        let topTimeSave = 0;
+        let scrollTopSave = elScroll.scrollTop;
+        function onScroll(e: any) {
+            let { onScroll: propsOnScroll, onScrollTop, onScrollBottom } = props;
+            if (propsOnScroll) propsOnScroll(e);
+
+            let el = (e.target as Document).scrollingElement as HTMLBaseElement;
+            const { scrollTop, offsetHeight, scrollHeight } = el;
+            if (scrollTop > scrollTopSave) {
+                scrollTopSave = scrollTop;
+            }
+            const pageCache = uqApp.pageCache.getCache();
+            if (pageCache !== undefined && scrollTop > 0) {
+                Object.assign(pageCache, { scrollTop });
+            }
+            let scroller = new Scroller(el);
+            if (onScrollTop !== undefined && scrollTop < scrollEdgeGap) {
+                let topTime = new Date().getTime();
+                if (topTime - topTimeSave > scrollTimeGap) {
+                    topTimeSave = topTime;
+                    onScrollTop(scroller).then(ret => {
+                        // has more
+                        if (ret === true) {
+                            let sh = scrollHeight;
+                            let top = 200;
+                            if (top > sh) top = sh;
+                            el.scrollTop = top;
                         }
-                    }
+                    });
                 }
-                if (scrollTop + offsetHeight > scrollHeight - scrollEdgeGap) {
-                    if (onScrollBottom !== undefined && scrollTop >= scrollTopSave) {
-                        ++scrollTopSave;
-                        let bottomTime = new Date().getTime();
-                        if (bottomTime - bottomTimeSave > scrollTimeGap) {
-                            bottomTimeSave = bottomTime;
-                            onScrollBottom(scroller);
-                        }
-                    }
+            }
+            if (onScrollBottom !== undefined
+                && scrollTop + offsetHeight > scrollHeight - scrollEdgeGap
+                && scrollTop >= scrollTopSave) {
+                ++scrollTopSave;
+                let bottomTime = new Date().getTime();
+                if (bottomTime - bottomTimeSave > scrollTimeGap) {
+                    bottomTimeSave = bottomTime;
+                    setTimeout(() => onScrollBottom(scroller), 50);
                 }
             }
         }
-        setScroll();
         return () => {
             onClosed?.();
         }
@@ -87,7 +82,7 @@ export function PageBase(props: PageProps) {
     return <div ref={divRef} className="tonwa-page">
         <Suspense fallback={<PageSpinner />}>
             <div className='tonwa-page-header position-sticky top-0'>
-                <div className='container px-0 d-flex'>
+                <div className='container px-0'>
                     {header}
                 </div>
             </div>
@@ -105,15 +100,32 @@ export function PageBase(props: PageProps) {
     </div>;
 }
 
-export function PagePublic(props: PageProps) {
-    const navAction = useNavigationType();
+function PageModal(props: PageProps) {
+    const { closeModal } = useModal();
+    const modalProps = { ...props, back: 'close', onBack: () => closeModal(undefined) };
+    return <PageBase {...modalProps as any} />;
+}
+
+function PageNav(props: PageProps) {
     const uqApp = useUqAppBase();
-    const { pathname } = document.location;
+    const navAction = useNavigationType();
+    const navigate = useNavigate();
+    const { user: userAtom, mustLogin, pathLogin } = uqApp;
+    const user = useAtomValue(userAtom);
+    const { pathname } = useLocation();
+    useEffect(() => {
+        if (props.auth === false) return;
+        if (mustLogin && !user && pathLogin) {
+            navigate(pathLogin, { state: pathname });
+        }
+    }, [user, mustLogin, pathLogin]);
+    if (props.auth !== false && mustLogin && !user) return null;
     useEffectOnce(() => {
-        if (navAction !== 'POP') return;
-        const urlCache = uqApp.getUrlCache(pathname);
-        if (urlCache === undefined) return;
-        const { scrollTop } = urlCache;
+        uqApp.pageCache.onNav(navAction, pathname);
+        if (navAction !== NavigationType.Pop) return;
+        const pageCache = uqApp.pageCache.getCache();
+        if (pageCache === undefined) return;
+        const { scrollTop } = pageCache;
         if (scrollTop) {
             setTimeout(() => {
                 const scrollOptions = { top: scrollTop };
@@ -125,18 +137,13 @@ export function PagePublic(props: PageProps) {
 }
 
 export function Page(props: PageProps) {
-    const uqApp = useUqAppBase();
-    const navigate = useNavigate();
-    const { user: userAtom, mustLogin, pathLogin } = uqApp;
-    const user = useAtomValue(userAtom);
-    const { pathname } = useLocation();
-    useEffect(() => {
-        if (mustLogin && !user && pathLogin) {
-            navigate(pathLogin, { state: pathname });
-        }
-    }, [user, mustLogin, pathLogin]);
-    if (mustLogin && !user) return null;
-    return <PagePublic {...props} />;
+    const isModal = useContext<boolean>(ModalContext);
+    if (isModal === true) {
+        return <PageModal {...props} />;
+    }
+    else {
+        return <PageNav {...props} />;
+    }
 }
 
 function isScrollable(ele: HTMLElement) {

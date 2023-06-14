@@ -1,55 +1,78 @@
-import { useMemo } from "react";
-import { atom, useAtom } from "jotai";
-import { FA, LabelRow, LabelRowPropsBase } from "tonwa-com";
+import { useState, useRef } from "react";
+import { ButtonAsync, FA, LabelRow, LabelRowPropsBase } from "tonwa-com";
 import { useModal } from "../UqAppBase";
+import { Page } from "./page";
+
+export interface PickProps {
+    label: string | JSX.Element;
+    value: string | number;
+    onValueChanged?: (value: string | number) => Promise<void> | void;
+}
 
 export interface EditProps {
     label: string | JSX.Element;
     value: string | number;
+    readonly?: boolean;         // default: false
     onValueChanged?: (value: string | number) => Promise<void> | void;
-    Edit?: (props: EditProps) => JSX.Element;
+    pickValue?: (props: PickProps) => Promise<string | number>;
+    ValueTemplate?: (props: { value: string | number }) => JSX.Element;
 }
 
 export function LabelRowEdit(props: LabelRowPropsBase & EditProps) {
-    const { label, value: initValue, onValueChanged, Edit } = props;
+    let { label, value: initValue, readonly, pickValue, onValueChanged, ValueTemplate } = props;
     const { openModal, closeModal } = useModal();
-    const atomValue = useMemo(() => atom(Number(initValue)), [initValue]);
-    const [value, setValue] = useAtom(atomValue);
-    async function onClick() {
-        let ret = await openModal(<OneModal />, 'one modal');
-        if (ret !== undefined) {
-            setValue(ret);
+    const [value, setValue] = useState(initValue);
+    if (pickValue === undefined) {
+        pickValue = async (pickProps) => {
+            let ret = await openModal(<OneModal />); //, '修改' + label);
+            return ret;
         }
     }
+    async function onClick() {
+        let ret = await pickValue({ label, value: initValue, });
+        if (ret !== undefined) {
+            setValue(ret);
+            await onValueChanged?.(ret);
+        }
+    }
+    let right: any = <span className="p-3">&nbsp;</span>;
+    if (readonly !== true) {
+        right = <div onClick={onClick} className="cursor-pointer p-3"><FA name="pencil" className="text-info" /></div>;
+    }
+    let viewValue = ValueTemplate === undefined ?
+        <>{value}</>
+        :
+        <ValueTemplate value={value} />;
     return <LabelRow {...props}>
         {label}
-        <div>{value}</div>
-        <div onClick={onClick} className="cursor-pointer p-3"><FA name="pencil" className="text-info" /></div>
+        <div className="ms-3">{viewValue}</div>
+        {right}
     </LabelRow>;
 
     function OneModal() {
-        const { openModal, closeModal } = useModal();
-        const [value, setValue] = useAtom(atomValue);
-        return <div className="p-3">
-            modal title
-            value: {value}
-            <button onClick={() => setValue(Number(value) + 1)}>+</button>
-            <button onClick={() => openModal(<ChildModal />)}>open</button>
-            <button onClick={() => closeModal(value)}>return</button>
-        </div>;
-    }
-
-    function ChildModal() {
-        const [value, setValue] = useAtom(atomValue);
-        let arr = [];
-        for (let i = 0; i < 200; i++) {
-            arr.push(<div key={i}>{i}</div>);
+        const { closeModal } = useModal();
+        const inp = useRef<HTMLInputElement>();
+        // const defaultValue = useAtomValue(atomValue);
+        // let value = defaultValue;
+        /*
+        function onChange(e: ChangeEvent) {
+            value = (e.target as HTMLInputElement).value;
         }
-        return <div className="p-3">
-            {value}
-            <button onClick={() => setValue(Number(value) + 1)}>+</button>
-            child modal
-            {arr}
-        </div>;
+        onChange={onChange} 
+        */
+        async function onSave() {
+            closeModal(inp.current.value);
+        }
+        return <Page header={label}>
+            <div className="px-5 py-3">
+                <div>
+                    <input ref={inp} className="form-control" type="text" defaultValue={initValue} />
+                </div>
+                <div className="mt-3">
+                    <ButtonAsync className="btn btn-primary me-3" onClick={onSave}>保存</ButtonAsync>
+                    <button className="btn btn-outline-primary" onClick={() => closeModal()}>取消</button>
+                </div>
+            </div>
+        </Page>;
     }
 }

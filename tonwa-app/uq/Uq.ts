@@ -1,6 +1,11 @@
 import {
-    UqMan, Uq as UqCore, UqError
+    UqMan, Uq as UqCore
 } from "tonwa-uq";
+
+enum UqError {
+    unexist_entity = 'UnexistEntity',
+    unexist_uq = 'UnexistUq'
+};
 
 export class Uq {
     private $_uqMan: UqMan;
@@ -20,7 +25,7 @@ export class Uq {
                 if (lk[0] === '$') {
                     switch (lk) {
                         case '$': return this;
-                        case '$name': return this.$_uqMan.name;
+                        // case '$name': return this.$_uqMan.name;
                     }
                 }
                 let ret = target[lk];
@@ -29,8 +34,8 @@ export class Uq {
                 if (func !== undefined) return func;
                 func = (this as any)[key];
                 if (func !== undefined) return func;
-                this.errUndefinedEntity(String(key));
-            }
+                this.errUnexistEntity(String(key));
+            },
         });
         return ret;
     }
@@ -40,16 +45,17 @@ export class Uq {
             get: (target, key, receiver) => {
                 let ret = (target as any)['$' + (key as string)];
                 if (ret !== undefined) return ret;
-                this.errUndefinedEntity(String(key));
+                this.errUnexistEntity(String(key));
             }
         });
         return ret as unknown as UqCore;
     }
 
-    private errUndefinedEntity(entity: string) {
+    private errUnexistEntity(entity: string) {
         let message = `entity ${this.$_uqMan.name}.${entity} not defined`;
         let err = new Error(message);
-        err.name = UqError.undefined_entity;
+        err.name = UqError.unexist_entity;
+        this.$_uqMan.clearLocalEntites();
         throw err;
     }
     /*

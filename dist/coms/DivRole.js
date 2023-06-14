@@ -3,7 +3,7 @@ import { useUqAppBase } from "../UqAppBase";
 export function DivRole({ children, role }) {
     let uqApp = useUqAppBase();
     if (uqApp.hasRole(role) === true)
-        return _jsx(_Fragment, { children: children }, void 0);
+        return _jsx(_Fragment, { children: children });
     return null;
 }
 //# sourceMappingURL=DivRole.js.map

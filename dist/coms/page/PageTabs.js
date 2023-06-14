@@ -23,7 +23,7 @@ function createTabsFromChildren(children) {
             id: tabId++,
             name: props.name,
             tag: props.tag,
-            content: _jsx(_Fragment, { children: props.children }, void 0),
+            content: _jsx(_Fragment, { children: props.children }),
             mountable: atom(false),
         };
         tabs.push(tab);
@@ -56,7 +56,7 @@ export function PageTabs({ children }) {
     }
     function Tags({ cur }) {
         const cn = 'nav nav-tabs position-sticky tonwa-band-container justify-content-evenly bg-light';
-        return _jsx("ul", { className: cn, style: { bottom: '0' }, children: tabs.map((v, index) => _jsx("li", { className: "nav-item flex-fill align-self-stretch", children: _jsx("div", { onClick: () => onTabClick(v), className: 'nav-link h-100 p-0 ' + (index === cur ? 'active' : 'cursor-pointer'), children: v.tag }, void 0) }, v.id)) }, void 0);
+        return _jsx("ul", { className: cn, style: { bottom: '0' }, children: tabs.map((v, index) => _jsx("li", { className: "nav-item flex-fill align-self-stretch", children: _jsx("div", { onClick: () => onTabClick(v), className: 'nav-link h-100 p-0 ' + (index === cur ? 'active' : 'cursor-pointer'), children: v.tag }) }, v.id)) });
     }
     function TabPane({ tab, active, index }) {
         //let divRef = useScroll(false);
@@ -64,9 +64,9 @@ export function PageTabs({ children }) {
         let mountable = useAtomValue(atomMoutable);
         if (mountable === false)
             return null;
-        return _jsx(Suspense, { fallback: _jsx(PageSpinner, {}, void 0), children: _jsxs("div", { ref: div => tabs[index].element = div, className: 'tonwa-pane ' + (active === index ? 'active' : ''), children: [content, _jsx(Tags, { cur: index }, void 0)] }, void 0) }, void 0);
+        return _jsx(Suspense, { fallback: _jsx(PageSpinner, {}), children: _jsxs("div", { ref: div => tabs[index].element = div, className: 'tonwa-pane ' + (active === index ? 'active' : ''), children: [content, _jsx(Tags, { cur: index })] }) });
     }
-    return _jsx(_Fragment, { children: tabs.map((v, index) => _jsx(TabPane, { tab: v, active: 0, index: index }, v.id)) }, void 0);
+    return _jsx(_Fragment, { children: tabs.map((v, index) => _jsx(TabPane, { tab: v, active: 0, index: index }, v.id)) });
 }
 function invariant(condition, message) {
     if (!condition)

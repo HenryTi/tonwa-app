@@ -34,6 +34,7 @@ export interface PageTemplateProps {
     errorPosition?: 'above-header' | 'under-header';
 }
 export interface PageProps extends PageHeaderProps, PageFooterProps, PageContentProps, PageTemplateProps {
+    auth?: boolean;
     onClosing?: () => Promise<boolean>;
     onClosed?: () => Promise<void> | void;
 }

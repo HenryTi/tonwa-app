@@ -21,22 +21,22 @@ export function createBandsFromFields(props, sep) {
 function createInputFromField(field) {
     let { type, name } = field;
     if (name === 'no') {
-        return _jsx(String, { name: name, readOnly: true }, void 0);
+        return _jsx(String, { name: name, readOnly: true });
     }
     switch (type) {
-        default: return _jsxs("div", { children: ["unknown type: ", type] }, void 0);
-        case 'id': return _jsx(Pick, { name: name, onPick: async () => alert('pick id') }, void 0);
+        default: return _jsxs("div", { children: ["unknown type: ", type] });
+        case 'id': return _jsx(Pick, { name: name, onPick: async () => alert('pick id') });
         case 'bigint':
         case 'int':
         case 'tinyint':
         case 'smallint':
-            return _jsx(Int, { name: name }, void 0);
+            return _jsx(Int, { name: name });
         case 'dec':
-            return _jsx(Decimal, { name: name }, void 0);
+            return _jsx(Decimal, { name: name });
         case 'char':
-            return _jsx(String, { name: name, maxLength: field.size }, void 0);
+            return _jsx(String, { name: name, maxLength: field.size });
         case 'text':
-            return _jsx(TextArea, { name: name, maxLength: 60000 }, void 0);
+            return _jsx(TextArea, { name: name, maxLength: 60000 });
     }
 }
 //# sourceMappingURL=FieldsBands.js.map

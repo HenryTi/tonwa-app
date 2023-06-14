@@ -5,32 +5,27 @@ import { atom, useAtom } from 'jotai';
 import jwtDecode from 'jwt-decode';
 import { Spinner, getAtomValue, setAtomValue, useEffectOnce } from 'tonwa-com';
 import { LocalDb, createUQsMan, Net } from 'tonwa-uq';
-import { PageBase } from './coms';
 import { uqsProxy } from './uq';
 import { AutoRefresh } from './AutoRefresh';
 import { LocalData } from './tools';
+import { PageCache } from './PageCache';
 export class UqAppBase {
     appConfig;
     uqConfigs;
     uqsSchema;
-    map = new Map();
-    //private readonly stores: Store[];          // 用于在同一个模块中传递
     localData;
     roleNames;
     net;
     userApi;
     version; // version in appConfig;
     mustLogin;
-    //readonly responsive: {
-    //    user: User;
-    //}
     refreshTime = atom(Date.now() / 1000);
     user = atom(undefined);
     modal = {
         stack: atom([]),
     };
+    pageCache = new PageCache();
     uqsMan;
-    store;
     guest;
     uqs;
     uqUnit;
@@ -55,6 +50,7 @@ export class UqAppBase {
         this.userApi = this.net.userApi;
         let user = this.localData.user.get();
         setAtomValue(this.user, user);
+        this.pageCache = new PageCache();
     }
     get defaultUqRoleNames() { return undefined; }
     loginUnit(userUnit) {
@@ -66,8 +62,8 @@ export class UqAppBase {
     closeAllModal() {
         setAtomValue(this.modal.stack, []);
     }
+    onCloseModal;
     get userUnit() { return this.uqUnit.userUnit; }
-    // get me() { return this.user.read().user.read() return this.responsive.user?.id; }
     hasRole(role) {
         if (this.uqUnit === undefined)
             return false;
@@ -97,36 +93,6 @@ export class UqAppBase {
     restart() {
         document.location.assign('/');
     }
-    createUrlCache(url) {
-        let uc = this.map.get(url);
-        if (!uc) {
-            this.map.set(url, { scrollTop: undefined, data: undefined });
-        }
-    }
-    setUrlCacheScrollTop(url, scrollTop) {
-        let uc = this.map.get(url);
-        if (uc) {
-            uc.scrollTop = scrollTop;
-            return;
-        }
-        this.map.set(url, { scrollTop, data: undefined });
-    }
-    setUrlCacheData(url, data) {
-        let uc = this.map.get(url);
-        if (uc) {
-            uc.data = data;
-            return;
-        }
-        this.map.set(url, { scrollTop: undefined, data });
-    }
-    getUrlCache(url) {
-        return this.map.get(url);
-    }
-    /*
-    deleteUrlCache(url: string) {
-        this.map.delete(url);
-    }
-    */
     async setUserProp(propName, value) {
         await this.userApi.userSetProp(propName, value);
         let user = getAtomValue(this.user);
@@ -139,6 +105,7 @@ export class UqAppBase {
     saveLocalData() {
         this.localData.saveToLocalStorage();
     }
+    onLoadUQs() { }
     initErrors;
     async init() {
         console.log('UqApp.load()');
@@ -150,12 +117,9 @@ export class UqAppBase {
             this.uqsMan = uqsMan;
             this.uqs = uqsProxy(uqsMan);
             if (this.uqs) {
-                // this.uq = this.defaultUq;
-                // this.buildRoleNames();
+                this.onLoadUQs();
             }
-            // let user = this.localData.user.get();
             let user = getAtomValue(this.user);
-            // console.log('logined');
             if (!user) {
                 let guest = this.localData.guest.get();
                 if (guest === undefined) {
@@ -183,6 +147,35 @@ export class UqAppBase {
     loadOnLogined() {
         return;
     }
+    /*
+    private buildRoleNames() {
+        if (this.uq === undefined) return;
+        let defaultUqRoleNames = this.defaultUqRoleNames;
+        if (defaultUqRoleNames !== undefined) {
+            this.roleNames = defaultUqRoleNames[env.lang];
+            if (this.roleNames === undefined) {
+                this.roleNames = defaultUqRoleNames['$'];
+            }
+        }
+        if (this.roleNames === undefined) this.roleNames = {};
+    }
+
+    roleName(role: string): RoleName {
+        return this.roleNames[role];
+    }
+    */
+    objects = new Map();
+    objectOf(constructor) {
+        let ret = this.objects.get(constructor);
+        if (ret === undefined) {
+            ret = new constructor(this);
+            this.objects.set(constructor, ret);
+            this.onObjectBuilt(ret);
+        }
+        return ret;
+    }
+    onObjectBuilt(object) {
+    }
 }
 class LocalStorageDb extends LocalDb {
     getItem(key) {
@@ -195,35 +188,34 @@ class LocalStorageDb extends LocalDb {
         localStorage.removeItem(key);
     }
 }
+export const ModalContext = React.createContext(undefined);
 export function useModal() {
-    const { modal } = useUqAppBase();
+    const uqApp = useUqAppBase();
+    return uqAppModal(uqApp);
+}
+export function uqAppModal(uqApp) {
+    const { modal } = uqApp;
     const { stack: modalStackAtom } = modal;
-    const [modalStack, setModalStack] = useAtom(modalStackAtom);
-    async function openModal(element, caption, onClosed) {
+    async function openModal(element, onClosed) {
         return new Promise((resolve, reject) => {
             if (React.isValidElement(element) !== true) {
                 alert('is not valid element');
                 return;
             }
-            function Modal() {
-                const { closeModal } = useModal();
-                return _jsx(PageBase, { header: caption, onBack: () => closeModal(undefined), back: 'close', children: element }, void 0);
-            }
-            setModalStack([...modalStack, [_jsx(Modal, {}, void 0), resolve, onClosed]]);
+            let modal = _jsx(ModalContext.Provider, { value: true, children: element });
+            let modalStack = getAtomValue(modalStackAtom);
+            setAtomValue(modalStackAtom, [...modalStack, [modal, resolve, onClosed]]);
         });
     }
     function closeModal(result) {
+        let modalStack = getAtomValue(modalStackAtom);
         let [, resolve, onClosed] = modalStack.pop();
-        setModalStack([...modalStack]);
+        setAtomValue(modalStackAtom, [...modalStack]);
         resolve(result);
         onClosed?.(result);
+        uqApp.onCloseModal?.();
     }
     return { openModal, closeModal };
-}
-export function useScrollRestoration() {
-    const uqApp = useUqAppBase();
-    const { pathname } = document.location;
-    uqApp.createUrlCache(pathname);
 }
 export const UqAppContext = React.createContext(undefined);
 export function useUqAppBase() {
@@ -236,7 +228,7 @@ const queryClient = new QueryClient({
         },
     },
 });
-export function ViewUqAppBase({ uqApp, children }) {
+export function ViewUqApp({ uqApp, children }) {
     const [modalStack] = useAtom(uqApp.modal.stack);
     let [appInited, setAppInited] = useState(false);
     useEffectOnce(() => {
@@ -246,10 +238,10 @@ export function ViewUqAppBase({ uqApp, children }) {
         })();
     });
     if (appInited === false) {
-        return _jsx("div", { className: "p-5 text-center", children: _jsx(Spinner, { className: "text-info" }, void 0) }, void 0);
+        return _jsx("div", { className: "p-5 text-center", children: _jsx(Spinner, { className: "text-info" }) });
     }
     if (uqApp.initErrors) {
-        return _jsxs("div", { children: [_jsx("div", { children: "uq app start failed. init errors: " }, void 0), _jsx("ul", { className: "text-danger", children: uqApp.initErrors.map((v, index) => _jsx("li", { children: v }, index)) }, void 0)] }, void 0);
+        return _jsxs("div", { children: [_jsx("div", { children: "uq app start failed. init errors: " }), _jsx("ul", { className: "text-danger", children: uqApp.initErrors.map((v, index) => _jsx("li", { children: v }, index)) })] });
     }
     let len = modalStack.length;
     let cnMain;
@@ -263,9 +255,9 @@ export function ViewUqAppBase({ uqApp, children }) {
         viewModalStack = modalStack.map((v, index) => {
             let cn = index < len - 1 ? 'd-none' : '';
             let [el] = v;
-            return _jsx(React.Fragment, { children: _jsx("div", { className: cn + ' h-100', children: el }, void 0) }, index);
+            return _jsx(React.Fragment, { children: _jsx("div", { className: cn + ' h-100', children: el }) }, index);
         });
     }
-    return _jsx(UqAppContext.Provider, { value: uqApp, children: _jsxs(QueryClientProvider, { client: queryClient, children: [_jsx("div", { className: cnMain + ' h-100', children: children }, void 0), viewModalStack] }, void 0) }, void 0);
+    return _jsx(UqAppContext.Provider, { value: uqApp, children: _jsxs(QueryClientProvider, { client: queryClient, children: [_jsx("div", { className: cnMain + ' h-100', children: children }), viewModalStack] }) });
 }
 //# sourceMappingURL=UqAppBase.js.map

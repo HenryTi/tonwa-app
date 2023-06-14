@@ -1,7 +1,7 @@
 import { Fragment as _Fragment, jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
 import { uqStringify } from 'tonwa-uq';
 const TuidContent = (tuidName, values, x) => {
-    return _jsxs(_Fragment, { children: [tuidName, ": ", uqStringify(values)] }, void 0);
+    return _jsxs(_Fragment, { children: [tuidName, ": ", uqStringify(values)] });
 };
 export class ReactBoxId {
     id;
@@ -36,9 +36,9 @@ export class ReactBoxId {
         }
         switch (typeof val) {
             case 'undefined':
-                return _jsxs("span", { className: "text-black-50", children: [boxName, " undefined"] }, void 0);
+                return _jsxs("span", { className: "text-black-50", children: [boxName, " undefined"] });
             case 'number':
-                return _jsxs("span", { className: "text-light", children: [boxName, " ", this.id] }, void 0);
+                return _jsxs("span", { className: "text-light", children: [boxName, " ", this.id] });
         }
         if (ui === undefined) {
             ui = this.ui;
@@ -51,7 +51,7 @@ export class ReactBoxId {
                 let ret = ui(val);
                 if (ret !== undefined)
                     return ret;
-                return _jsxs("span", { className: "text-danger", children: [boxName, " ", this.id] }, void 0);
+                return _jsxs("span", { className: "text-danger", children: [boxName, " ", this.id] });
             }
         }
         return TuidContent(boxName, val);
@@ -69,10 +69,10 @@ function boxIdContent(bi, ui, x) {
     let boxId = bi;
     switch (typeof bi) {
         case 'undefined':
-            logContent = _jsx(_Fragment, { children: "boxId undefined" }, void 0);
+            logContent = _jsx(_Fragment, { children: "boxId undefined" });
             break;
         case 'number':
-            logContent = _jsxs(_Fragment, { children: ["id:", bi] }, void 0);
+            logContent = _jsxs(_Fragment, { children: ["id:", bi] });
             break;
         default:
             if (typeof boxId.render !== 'function') {
@@ -86,42 +86,42 @@ function boxIdContent(bi, ui, x) {
             break;
     }
     if (logContent !== undefined) {
-        return _jsx("del", { className: "text-danger", children: logContent }, void 0);
+        return _jsx("del", { className: "text-danger", children: logContent });
     }
     return boxId.render(ui, x);
 }
 const Tv = ({ tuidValue, ui, x, nullUI }) => {
     if (tuidValue === undefined) {
         if (nullUI === undefined)
-            return _jsx("small", { className: "text-muted", children: "[\u65E0]" }, void 0);
+            return _jsx("small", { className: "text-muted", children: "[\u65E0]" });
         return nullUI();
     }
     if (tuidValue === null) {
         if (nullUI === undefined)
-            return _jsx(_Fragment, { children: "[null]" }, void 0);
+            return _jsx(_Fragment, { children: "[null]" });
         return nullUI();
     }
     let ttv = typeof tuidValue;
     switch (ttv) {
         default:
             if (ui === undefined)
-                return _jsxs(_Fragment, { children: [ttv, "-", tuidValue] }, void 0);
+                return _jsxs(_Fragment, { children: [ttv, "-", tuidValue] });
             else {
                 let ret = ui(tuidValue, x);
                 if (ret !== undefined)
                     return ret;
-                return _jsx(_Fragment, { children: tuidValue }, void 0);
+                return _jsx(_Fragment, { children: tuidValue });
             }
         case 'object':
             let divObj = boxIdContent(tuidValue, ui, x);
             if (divObj !== undefined)
                 return divObj;
-            return nullUI === undefined ? _jsx(_Fragment, { children: "id null" }, void 0) : nullUI();
+            return nullUI === undefined ? _jsx(_Fragment, { children: "id null" }) : nullUI();
         case 'number':
-            return _jsxs(_Fragment, { children: ["id...", tuidValue] }, void 0);
+            return _jsxs(_Fragment, { children: ["id...", tuidValue] });
     }
 };
 export const tv = (tuidValue, ui, x, nullUI) => {
-    return _jsx(Tv, { tuidValue: tuidValue, ui: ui, x: x, nullUI: nullUI }, void 0);
+    return _jsx(Tv, { tuidValue: tuidValue, ui: ui, x: x, nullUI: nullUI });
 };
 //# sourceMappingURL=reactBoxId.js.map

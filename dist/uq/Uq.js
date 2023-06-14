@@ -1,4 +1,9 @@
-import { UqError } from "tonwa-uq";
+var UqError;
+(function (UqError) {
+    UqError["unexist_entity"] = "UnexistEntity";
+    UqError["unexist_uq"] = "UnexistUq";
+})(UqError || (UqError = {}));
+;
 export class Uq {
     $_uqMan;
     $_uqSql;
@@ -16,7 +21,7 @@ export class Uq {
                 if (lk[0] === '$') {
                     switch (lk) {
                         case '$': return this;
-                        case '$name': return this.$_uqMan.name;
+                        // case '$name': return this.$_uqMan.name;
                     }
                 }
                 let ret = target[lk];
@@ -28,8 +33,8 @@ export class Uq {
                 func = this[key];
                 if (func !== undefined)
                     return func;
-                this.errUndefinedEntity(String(key));
-            }
+                this.errUnexistEntity(String(key));
+            },
         });
         return ret;
     }
@@ -39,15 +44,16 @@ export class Uq {
                 let ret = target['$' + key];
                 if (ret !== undefined)
                     return ret;
-                this.errUndefinedEntity(String(key));
+                this.errUnexistEntity(String(key));
             }
         });
         return ret;
     }
-    errUndefinedEntity(entity) {
+    errUnexistEntity(entity) {
         let message = `entity ${this.$_uqMan.name}.${entity} not defined`;
         let err = new Error(message);
-        err.name = UqError.undefined_entity;
+        err.name = UqError.unexist_entity;
+        this.$_uqMan.clearLocalEntites();
         throw err;
     }
 }

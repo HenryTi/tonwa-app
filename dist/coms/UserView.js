@@ -17,12 +17,12 @@ export function UserView({ id, assigned, className, Template }) {
         loadUser();
     }, [app, id]);
     if (user === null || user === undefined)
-        return _jsx("span", { className: className, children: id }, void 0);
+        return _jsx("span", { className: className, children: id });
     if (Template) {
-        return _jsx(Template, { user: user, assigned: assigned }, void 0);
+        return _jsx(Template, { user: user, assigned: assigned });
     }
     else {
-        return _jsx("span", { className: className, children: user.name }, void 0);
+        return _jsx("span", { className: className, children: user.name });
     }
 }
 //# sourceMappingURL=UserView.js.map

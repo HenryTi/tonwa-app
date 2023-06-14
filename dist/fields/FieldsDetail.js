@@ -3,6 +3,6 @@ import { PropEdit } from "../coms";
 import { createBandsFromFields } from "./FieldsBands";
 export function FieldsDetail(props) {
     let { className, values, onValuesChanged, children, sep } = props;
-    return _jsxs(PropEdit, { className: className, values: values, onValuesChanged: onValuesChanged, children: [createBandsFromFields(props, sep), children] }, void 0);
+    return _jsxs(PropEdit, { className: className, values: values, onValuesChanged: onValuesChanged, children: [createBandsFromFields(props, sep), children] });
 }
 //# sourceMappingURL=FieldsDetail.js.map

@@ -12,5 +12,5 @@ export declare class ReactBoxId implements BoxId {
     get boxName(): string;
     assure(): Promise<BoxId>;
 }
-export declare type TvTemplet = (values?: any, x?: any) => JSX.Element;
+export type TvTemplet = (values?: any, x?: any) => JSX.Element;
 export declare const tv: (tuidValue: number | BoxId, ui?: TvTemplet, x?: any, nullUI?: () => JSX.Element) => JSX.Element;
